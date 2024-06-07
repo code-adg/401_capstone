@@ -435,39 +435,75 @@ iframe {
 	</style>
 </head>
 <body>
-	
 	<div class="limiter">
 		<div class="container-login100">
 			<div class="wrap-login100">
-				<form class="login100-form validate-form" action="/login" method="post">
+				<form class="login100-form validate-form" id="login-form" action="/login" method="post">
 					<span class="login100-form-title">
 						Login Page
 					</span>
 					<div class="wrap-input100 validate-input" data-validate = "Valid email is required: ex@abc.xyz">
-						<input class="input100" type="text" name="email" placeholder="Email">
+						<input class="input100" type="text" name="email" id="email" placeholder="Email">
 						<span class="focus-input100"></span>
 						<span class="symbol-input100">
 							<i class="fa fa-envelope" aria-hidden="true"></i>
 						</span>
 					</div>
-
 					<div class="wrap-input100 validate-input" data-validate = "Password is required">
-						<input class="input100" type="password" name="password" placeholder="Password">
+						<input class="input100" type="password" name="password" id="password" placeholder="Password">
 						<span class="focus-input100"></span>
 						<span class="symbol-input100">
 							<i class="fa fa-lock" aria-hidden="true"></i>
 						</span>
 					</div>
-					
 					<div class="container-login100-form-btn">
-						<button class="login100-form-btn">
+						<button class="login100-form-btn" type="submit">
 							Login
 						</button>
 					</div>
 				</form>
-				<p><%= message %></p>
+				<p id="login-error" style="color: red;"></p>
 			</div>
 		</div>
 	</div>
+	<script type="module">
+		// Import the functions you need from the SDKs you need
+		import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+		import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+		
+		// Your web app's Firebase configuration
+		const firebaseConfig = {
+			apiKey: "AIzaSyBfU4WZ53Fov_ITA6byutyrMNxOD1r0Clo",
+			authDomain: "login-signup-86aea.firebaseapp.com",
+			projectId: "login-signup-86aea",
+			storageBucket: "login-signup-86aea.appspot.com",
+			messagingSenderId: "73290508982",
+			appId: "1:73290508982:web:d1b077cd1cedd75aef5417"
+		};
+		
+		// Initialize Firebase
+		const app = initializeApp(firebaseConfig);
+		const auth = getAuth(app);
+		
+		// Handle form submission
+		document.getElementById('login-form').addEventListener('submit', function(event) {
+			event.preventDefault();
+			var email = document.getElementById('email').value;
+			var password = document.getElementById('password').value;
+			
+			signInWithEmailAndPassword(auth, email, password)
+				.then((userCredential) => {
+					// Signed in
+					var user = userCredential.user;
+					window.location.href = '/dashboard';
+				})
+				.catch((error) => {
+					var errorCode = error.code;
+					var errorMessage = error.message;
+					// Display error message
+					document.getElementById('login-error').innerText = errorMessage;
+				});
+		});
+	</script>
 </body>
 </html>
