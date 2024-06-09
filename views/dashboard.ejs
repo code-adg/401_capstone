@@ -1,31 +1,186 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Dashboard</title>
-    <link rel="stylesheet" type="text/css" href="/styles/style.css">
-    <style>
-        .dashboard-container {
-            max-width: 600px;
-            margin: 0 auto;
-            text-align: center;
-            padding: 50px;
-        }
-
-        .dashboard-container h1 {
-            margin-bottom: 20px;
-            color: #333;
-        }
-
-        .dashboard-container p {
-            margin-bottom: 20px;
-            color: #555;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TO-DO List</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta2/css/all.min.css" integrity="sha512-YWzhKL2whUzgiheMoBFwW8CKV4qpHQAEuvilg9FAn5VJUDwKZZxkJNuGM4XkWuk94WCrrwslk8yWNGmY1EduTA==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+  <style>
+    body{
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      background-color: #f1843e;
+    }
+    .form{
+      position: absolute;
+      top: 40%;
+      box-shadow: 0 4px 8px rgba(0,0,0,.3);
+      width: 400px;
+      background-color:lightblue;
+      border-radius: 10px;
+    }
+    .input{
+      width: 100%;
+      box-sizing: border-box;
+      padding: 20px;
+      border-radius: 10px 10px 0 0;
+      border: none;
+      font-size: 20px;
+      font-family:Arial, Helvetica, sans-serif;
+    }
+    .input::placeholder{
+      color: black;
+    }
+    .list{
+      padding: 0;
+      margin: 0;
+    }
+    .list li{
+      list-style-type: none;
+      padding: 20px;
+      font-family:Arial, Helvetica, sans-serif;
+      border-color: darkgray;
+      position: relative;
+      border-bottom: dotted;
+    }
+    .list li .fa-trash{
+      color: red;
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+    }
+    .list li .fa-check-square{
+      color: green;
+      position: absolute;
+      right: 40px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+    }
+    .list li.checked {
+      color: black;
+      text-decoration: line-through;
+    }
+    .list li.checked .fa-check-square{
+      color: darkgray;
+    }
+    h1{
+      color:white;  
+      top:25%;
+      font-size:50px;
+    }
+  </style>
 </head>
 <body>
-    <div class="dashboard-container">
-        <h1>Welcome to Your Dashboard</h1>
-        <p>You have successfully logged in.</p>
-    </div>
+  <h1>Todo List</h1>
+  <form class="form">
+    <input type="text" class="input" placeholder="Enter your task" autocomplete="off"/>
+    <ul class="list"></ul>
+  </form>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBfU4WZ53Fov_ITA6byutyrMNxOD1r0Clo",
+      authDomain: "login-signup-86aea.firebaseapp.com",
+      projectId: "login-signup-86aea",
+      storageBucket: "login-signup-86aea.appspot.com",
+      messagingSenderId: "73290508982",
+      appId: "1:73290508982:web:d1b077cd1cedd75aef5417"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const db = getFirestore();
+
+    const formEl = document.querySelector(".form");
+    const inputEl = document.querySelector(".input");
+    const ulEl = document.querySelector(".list");
+
+    let userId;
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        userId = user.uid;
+        loadTasks(userId);
+      } else {
+        userId = null;
+        ulEl.innerHTML = '';
+      }
+    });
+
+    formEl.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (userId) {
+        addTask(userId);
+      }
+    });
+
+    async function loadTasks(userId) {
+      const querySnapshot = await getDocs(collection(db, `users/${userId}/tasks`));
+      querySnapshot.forEach((doc) => {
+        const task = doc.data();
+        toDoList({ ...task, id: doc.id });
+      });
+    }
+
+    async function addTask(userId) {
+      const newTask = inputEl.value;
+      if (newTask) {
+        const docRef = await addDoc(collection(db, `users/${userId}/tasks`), {
+          name: newTask,
+          checked: false
+        });
+        toDoList({ name: newTask, checked: false, id: docRef.id });
+        inputEl.value = '';
+      }
+    }
+
+    function toDoList(task) {
+      const liEl = document.createElement("li");
+      if (task.checked) {
+        liEl.classList.add("checked");
+      }
+      liEl.innerText = task.name;
+      ulEl.appendChild(liEl);
+
+      const checkBtnEl = document.createElement("div");
+      checkBtnEl.innerHTML = `<i class="fas fa-check-square"></i>`;
+      liEl.appendChild(checkBtnEl);
+
+      const trashBtnEl = document.createElement("div");
+      trashBtnEl.innerHTML = `<i class="fas fa-trash"></i>`;
+      liEl.appendChild(trashBtnEl);
+
+      checkBtnEl.addEventListener("click", () => {
+        liEl.classList.toggle("checked");
+        updateTask(task.id, { checked: liEl.classList.contains("checked") });
+      });
+
+      trashBtnEl.addEventListener("click", () => {
+        liEl.remove();
+        deleteTask(task.id);
+      });
+    }
+
+    async function updateTask(taskId, updatedData) {
+      if (userId) {
+        const taskDocRef = doc(db, `users/${userId}/tasks`, taskId);
+        await updateDoc(taskDocRef, updatedData);
+      }
+    }
+
+    async function deleteTask(taskId) {
+      if (userId) {
+        const taskDocRef = doc(db, `users/${userId}/tasks`, taskId);
+        await deleteDoc(taskDocRef);
+      }
+    }
+  </script>
 </body>
 </html>
